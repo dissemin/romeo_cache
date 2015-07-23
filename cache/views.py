@@ -34,19 +34,19 @@ def perform_query(request):
     try:
         r = Record.objects.get(data=encoded)
         if timezone.now() - r.fetched < record_life:
-            return HttpResponse(r.body, content_type='text/xml')
+            return HttpResponse(r.body)#, content_type='text/xml; charset=utf-8', charset='utf-8')
     except Record.DoesNotExist:
         pass
 
-    resp = urlopen_retry(base_url, data=request.GET)
+    resp_u = urlopen_retry(base_url, data=request.GET)
+    resp = resp_u.encode('utf-8')
     if r is None:
-        r = Record(data=encoded,body=resp)
+        r = Record(data=encoded,body=resp_u)
     else:
-        r.body = resp
-    # TODO ensure we don't save some errors such as invalid api key
-    if not '<outcome>invalidapikey</outcome>' in resp:
+        r.body = resp_u
+    if not '<outcome>invalidapikey</outcome>'.encode('utf-8') in resp:
         r.save()
-    return HttpResponse(resp, content_type='text/xml')
+    return HttpResponse(resp_u)#, content_type='text/xml; charset=utf-8', charset='utf-8')
 
 def urlopen_retry(url, **kwargs):# data, timeout, retries, delay, backoff):
     data = kwargs.get('data', None)
