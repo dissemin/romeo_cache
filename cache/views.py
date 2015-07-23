@@ -38,7 +38,7 @@ def perform_query(request):
     except Record.DoesNotExist:
         pass
 
-    resp = urlopen_retry(base_url, data=request.GET).encode('utf-8')
+    resp = urlopen_retry(base_url, data=request.GET)
     if r is None:
         r = Record(data=encoded,body=resp)
     else:
