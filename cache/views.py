@@ -7,6 +7,8 @@ from django.utils import timezone
 
 import requests
 import requests.exceptions
+import lxml.etree as ET
+from io import BytesIO
 
 from datetime import timedelta, datetime
 
@@ -45,7 +47,12 @@ def perform_query(request):
     else:
         r.body = resp_u
     if not '<outcome>invalidapikey</outcome>'.encode('utf-8') in resp:
-        r.save()
+        try:
+            parser = ET.XMLParser(encoding='utf-8')
+            ET.parse(BytesIO(resp), parser)
+            r.save()
+        except ET.ParseError as e:
+            pass
     return HttpResponse(resp_u)#, content_type='text/xml; charset=utf-8', charset='utf-8')
 
 def urlopen_retry(url, **kwargs):# data, timeout, retries, delay, backoff):
