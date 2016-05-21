@@ -24,9 +24,8 @@ def perform_query(request):
     if request.method != 'GET':
         return HttpResponseForbidden('Invalid method', content_type='text/plain')
     args = request.GET.copy()
-    if not 'ak' in args:
-        return HttpResponseForbidden('An API key is required', content_type='text/plain')
-    else:
+    api_key = args.get('ak')
+    if 'ak' in args:
         del args['ak']
     encoded = urlencode(args)
     if not all(map(lambda x: x in allowed_parameters, args.keys())) or len(encoded) > MAX_DATA_LENGTH:
@@ -35,10 +34,14 @@ def perform_query(request):
     r = None
     try:
         r = Record.objects.get(data=encoded)
-        if timezone.now() - r.fetched < record_life:
+        # if no api key is provided or the record is fresh enough, we return the record
+        if timezone.now() - r.fetched < record_life or not api_key:
             return HttpResponse(r.body)#, content_type='text/xml; charset=utf-8', charset='utf-8')
     except Record.DoesNotExist:
         pass
+
+    if not 'ak' in args:
+        return HttpResponseForbidden('An API key is required', content_type='text/plain')
 
     resp_u = urlopen_retry(base_url, data=request.GET)
     resp = resp_u.encode('utf-8')
