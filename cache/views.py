@@ -40,7 +40,7 @@ def perform_query(request):
     except Record.DoesNotExist:
         pass
 
-    if not 'ak' in args:
+    if not api_key:
         return HttpResponseForbidden('An API key is required', content_type='text/plain')
 
     resp_u = urlopen_retry(base_url, data=request.GET)
